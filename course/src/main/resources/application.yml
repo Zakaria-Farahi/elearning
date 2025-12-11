@@ -1,0 +1,13 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: elearning-backend
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/elearning-realm
+          # Spring découvrira automatiquement les clés via .well-known/openid-configuration
