@@ -6,4 +6,7 @@ const keycloak = new Keycloak({
     clientId: "react-client",
 });
 
+// Enable cookie support for cross-origin requests
+keycloak.enableLogging = true;
+
 export default keycloak;

@@ -19,20 +19,39 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         let refreshInterval;
+        let isMounted = true;
+
+        // Prevent double initialization in React StrictMode
+        if (keycloak.didInitialize) {
+            console.log("⚠️ Keycloak already initialized, skipping...");
+            setLoading(false);
+            setAuthenticated(keycloak.authenticated);
+            setToken(keycloak.token);
+            return;
+        }
 
         // Initialisation de Keycloak au démarrage de l'app
         keycloak
             .init({
                 onLoad: "login-required", // si pas connecté → redirection Keycloak
                 checkLoginIframe: false,
+                enableLogging: true,
+                pkceMethod: 'S256', // Enable PKCE for better security
+                flow: 'standard', // Use standard OAuth flow
             })
             .then(async (auth) => {
+                console.log("🔐 Keycloak init result:", auth);
+                console.log("🔑 Token:", keycloak.token ? "Present" : "Missing");
+                console.log("👤 Keycloak authenticated:", keycloak.authenticated);
+
                 if (!auth) {
+                    console.error("❌ Keycloak authentication failed");
                     setAuthenticated(false);
                     setLoading(false);
                     return;
                 }
 
+                console.log("✅ Keycloak authentication successful!");
                 setAuthenticated(true);
                 setToken(keycloak.token);
 
@@ -94,15 +113,22 @@ export function AuthProvider({ children }) {
                         });
                 }, 30000); // vérifie toutes les 30 secondes
 
+                console.log("✅ Authentication setup complete");
+                console.log("📊 Final state: authenticated =", true, "loading =", false);
+
+                if (!isMounted) return;
                 setLoading(false);
             })
             .catch((err) => {
-                console.error("Erreur d'initialisation Keycloak :", err);
+                console.error("❌ Erreur d'initialisation Keycloak :", err);
+                if (!isMounted) return;
+                setAuthenticated(false);
                 setLoading(false);
             });
 
-        // Nettoyage de l’intervalle quand le component est démonté
+        // Nettoyage de l'intervalle quand le component est démonté
         return () => {
+            isMounted = false;
             if (refreshInterval) {
                 clearInterval(refreshInterval);
             }
